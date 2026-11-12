@@ -1,0 +1,107 @@
+package com.example.foodscanner.ui.auth
+
+import android.content.Intent
+import android.os.Bundle
+import android.view.View
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.example.foodscanner.R
+import com.example.foodscanner.data.auth.FirebaseAuthManager
+import com.example.foodscanner.databinding.ActivityRegisterBinding
+import com.example.foodscanner.ui.home.HomeActivity
+import kotlinx.coroutines.launch
+
+class RegisterActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityRegisterBinding
+    private val authManager = FirebaseAuthManager()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityRegisterBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        setupClickListeners()
+    }
+
+    private fun setupClickListeners() {
+        binding.registerButton.setOnClickListener {
+            performRegistration()
+        }
+
+        binding.loginLink.setOnClickListener {
+            finish()
+        }
+    }
+
+    private fun performRegistration() {
+        val name = binding.nameInput.text.toString().trim()
+        val email = binding.emailInput.text.toString().trim()
+        val password = binding.passwordInput.text.toString()
+
+        if (!validateInputs(name, email, password)) {
+            return
+        }
+
+        binding.progressBar.visibility = View.VISIBLE
+        binding.registerButton.isEnabled = false
+
+        lifecycleScope.launch {
+            val result = authManager.register(name, email, password)
+
+            result.onSuccess {
+                binding.progressBar.visibility = View.GONE
+                navigateToHome()
+            }
+
+            result.onFailure { exception ->
+                binding.progressBar.visibility = View.GONE
+                binding.registerButton.isEnabled = true
+                showError(exception.message ?: "Registration failed")
+            }
+        }
+    }
+
+    private fun validateInputs(name: String, email: String, password: String): Boolean {
+        binding.errorMessage.visibility = View.GONE
+
+        if (name.isEmpty()) {
+            showError("Please enter your name")
+            return false
+        }
+
+        if (email.isEmpty()) {
+            showError("Please enter email")
+            return false
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            showError(getString(R.string.error_invalid_email))
+            return false
+        }
+
+        if (password.isEmpty()) {
+            showError("Please enter password")
+            return false
+        }
+
+        if (password.length < 6) {
+            showError(getString(R.string.error_weak_password))
+            return false
+        }
+
+        return true
+    }
+
+    private fun showError(message: String) {
+        binding.errorMessage.visibility = View.VISIBLE
+        binding.errorMessage.text = message
+    }
+
+    private fun navigateToHome() {
+        val intent = Intent(this, HomeActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+}
