@@ -69,3 +69,12 @@ Thumbs.db
 
 # Captures folder
 captures/
+
+# Documentation (keep only README.md)
+SETUP.md
+TESTING.md
+ARCHITECTURE.md
+COMPLETION_REPORT.md
+PROJECT_FILES.md
+QUICK_START.md
+GIT_DEPLOYMENT.md
